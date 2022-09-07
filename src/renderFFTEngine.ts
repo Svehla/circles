@@ -164,7 +164,7 @@ const renderFourier2Circles = (
 // square wave
 // amplitude
 
-const fourierTransformData = Array.from({ length: 10 })
+const squareWaveFns = Array.from({ length: 10 })
   .map((_, i) => ({
     radius: 1 / (i * 2 + 1),
     freq: i * 2 + 1,
@@ -186,7 +186,7 @@ const examples = {
     },
   ],
   b: [
-    ...fourierTransformData,
+    ...squareWaveFns,
     // {
     //   radius: 0.67201625231031,
     //   rotationPerSecond: 1.024,
@@ -290,7 +290,7 @@ initRenderUI()
 // ---------------
 
 export const xd = (data: any[]) => {
-  console.log(data)
+  // console.log(data)
   examples.b = data.map(i => ({
     ...i,
     radius: i.radius * RADIUS_RESIZE,

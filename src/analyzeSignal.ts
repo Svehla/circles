@@ -186,7 +186,10 @@ const getSumOfFns = (fns: number[][]) => {
 // TODO: xAxisScaleFactor does not scale background
 const renderSquareWave = () => {
   // The sampling rate refers to the number of samples per second.
-  const SAMPLE_RATE = 200
+
+  // musí to být dopíči zkurvenej násob 2 na něco
+  // proč!!!
+  const SAMPLE_RATE = 2 ** 11 / 6 // => je to kurwa závislé na SIZE!!!!
   // the number of waves that pass a fixed point in unit time (1sec)
   const frequency = 1
   const SIZE = 2 ** 11 // 2048
@@ -197,7 +200,7 @@ const renderSquareWave = () => {
       (_, i) => Math.sin(frequency * order * Math.PI * 2 * (i / SAMPLE_RATE)) * (1 / order)
     )
 
-  const APPROXIMATION_COUNT = 2
+  const APPROXIMATION_COUNT = 80
   const squareWaveFns = Array.from({ length: APPROXIMATION_COUNT }).map((_, i) =>
     getSinSquareWavePartSample(1 + i * 2)
   )
@@ -222,13 +225,13 @@ const renderSquareWave = () => {
       height: 190,
     },
     [fftOutputSpectrum],
-    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 3, yAxisScaleFactor: 100 }
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 100 }
   )
 
   const fns2 = getFTMetadata(fftOutputSpectrum, {
     size: SIZE,
     sampleRate: SAMPLE_RATE,
-    peaksCount: APPROXIMATION_COUNT,
+    maxPeaksCount: APPROXIMATION_COUNT,
   })
 
   const fnsData = fns2.map(i =>
@@ -248,8 +251,6 @@ const renderSquareWave = () => {
 
   // square wave
   xd(dataToEngine)
-
-  // console.log(JSON.stringify(fns2, null, 2))
 
   renderChart(
     {
@@ -281,7 +282,7 @@ const getSinusFunctionSamples = (a: {
 const renderBasicComposedSins = () => {
   // const amplitude = 1
   // the number of samples per second. (1 sec = red line in the chart)
-  const SAMPLE_RATE = 2 ** 10 / 3
+  const SAMPLE_RATE = 2 ** 10
   // the number of waves that pass a fixed point in unit time (1sec)
   // const frequency = 1
   const SIZE = 2 ** 10 // 2048
@@ -289,29 +290,15 @@ const renderBasicComposedSins = () => {
     getSinusFunctionSamples({
       size: SIZE,
       sampleRate: SAMPLE_RATE,
-      frequency: 1,
+      // floatss!!!!!
+      frequency: 5,
       amplitude: 1.2,
     }),
-
     getSinusFunctionSamples({
       size: SIZE,
       sampleRate: SAMPLE_RATE,
-      frequency: 5,
-      amplitude: 0.5,
-    }),
-
-    // getSinusFunctionSamples({
-    //   size: SIZE,
-    //   sampleRate: SAMPLE_RATE,
-    //   frequency: 1.5,
-    //   amplitude: 1,
-    // }),
-
-    getSinusFunctionSamples({
-      size: SIZE,
-      sampleRate: SAMPLE_RATE,
-      frequency: 7,
-      amplitude: 1.5,
+      frequency: 10,
+      amplitude: 1.2,
     }),
   ]
   const sumFn = getSumOfFns(fns)
@@ -345,10 +332,8 @@ const renderBasicComposedSins = () => {
   const fns2 = getFTMetadata(fftOutputSpectrum, {
     size: SIZE,
     sampleRate: SAMPLE_RATE,
-    peaksCount: fns.length,
+    maxPeaksCount: fns.length,
   })
-
-  // console.log(JSON.stringify(fns2, null, 2))
 
   // render data
   const dataToEngine = fns2.map(i => ({
@@ -382,22 +367,26 @@ const renderBasicComposedSins = () => {
 
 // not sure if it workings well => will be better to have only peaks
 const getSignalPeaks = (ftWave: number[]) => {
-  return (
-    ftWave
-      // is not working!!!!!
-      /*
-      .filter((amplitude, index) => {
-        const prevVal = ftWave[index - 1] ?? 0
-        const nextVal = ftWave[index + 1] ?? 0
-        const isPeak = amplitude > prevVal && amplitude > nextVal
-        return isPeak
-      })
-      */
-      // TODO: +1??? there is no 0 element i guess
-      .map((amplitude, index) => ({ amplitude, xPosition: index + 1 }))
-      .sort((a, b) => a.amplitude - b.amplitude)
-      .reverse()
-  )
+  return ftWave
+    .map((amplitude, index) => ({ amplitude, xPosition: index + 1 }))
+    .filter((lol, index) => {
+      const amplitude = lol.amplitude
+      const prevVal = ftWave[index - 1] ?? 0
+      // const p2 = ftWave[index - 2] ?? 0
+      // const p3 = ftWave[index - 3] ?? 0
+      const nextVal = ftWave[index + 1] ?? 0
+      // const n2 = ftWave[index + 2] ?? 0
+      // const n3 = ftWave[index + 3] ?? 0
+      const isPeak =
+        // amplitude > p2 &&
+        // amplitude > p3 &&
+        amplitude > prevVal && amplitude > nextVal
+      // amplitude > n2 &&
+      // amplitude > n3
+      return isPeak
+    })
+    .sort((a, b) => a.amplitude - b.amplitude)
+    .reverse()
 }
 
 // How to read data:
@@ -408,15 +397,20 @@ const getSignalPeaks = (ftWave: number[]) => {
 
 // https://towardsdatascience.com/insight-to-the-fourier-transform-and-the-simple-implementation-of-it-eee293317efd
 // size === duration of the sound
-const getFrequencyFromFT = (a: { xPosition: number; size: number; sampleRate: number }) =>
-  a.xPosition / (a.size / a.sampleRate)
+const getFrequencyFromFT = (a: { xPosition: number; size: number; sampleRate: number }) => {
+  const waveDuration = a.size / a.sampleRate
+  // wtf names
+  const inTheWaveSinWasCalledTimes = a.xPosition
+
+  return inTheWaveSinWasCalledTimes / waveDuration
+}
 
 const getFTMetadata = (
   ftWave: number[],
   a: {
     size: number
     sampleRate: number
-    peaksCount: number
+    maxPeaksCount: number
   }
 ) => {
   const peaks = getSignalPeaks(ftWave)
@@ -428,8 +422,26 @@ const getFTMetadata = (
   //   .reverse()
 
   // TODO: how many values
+  // console.log('peaks')
+  // console.log(peaks)
+  // console.log(peaks)
 
-  const data = peaks.slice(0, a.peaksCount).map(f => ({
+  // broken debug GUI
+  peaks.forEach(v => {
+    drawLine(
+      {
+        x: 10 + v.xPosition,
+        y: 300,
+      },
+      {
+        x: 10 + v.xPosition,
+        y: 300 + v.amplitude * 100,
+      },
+      { width: 1, color: 'green' }
+    )
+  })
+
+  const data = peaks.slice(0, a.maxPeaksCount).map(f => ({
     amplitude: f.amplitude,
     frequency: getFrequencyFromFT({
       xPosition: f.xPosition,
@@ -437,6 +449,7 @@ const getFTMetadata = (
       sampleRate: a.sampleRate,
     }),
   }))
+  console.log(JSON.stringify(data, null, 2))
   return data
 }
 
