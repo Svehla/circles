@@ -197,7 +197,7 @@ const renderSquareWave = () => {
       (_, i) => Math.sin(frequency * order * Math.PI * 2 * (i / SAMPLE_RATE)) * (1 / order)
     )
 
-  const APPROXIMATION_COUNT = 20
+  const APPROXIMATION_COUNT = 2
   const squareWaveFns = Array.from({ length: APPROXIMATION_COUNT }).map((_, i) =>
     getSinSquareWavePartSample(1 + i * 2)
   )
@@ -259,8 +259,8 @@ const renderSquareWave = () => {
     },
 
     // TODO: add sum function
-    [getSumOfFns(fnsData) /*, ...fnsData*/],
-    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 80 }
+    [getSumOfFns(fnsData), sumFn],
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 50 }
   )
 }
 
@@ -289,22 +289,29 @@ const renderBasicComposedSins = () => {
     getSinusFunctionSamples({
       size: SIZE,
       sampleRate: SAMPLE_RATE,
-      frequency: 10,
+      frequency: 1,
       amplitude: 1.2,
     }),
 
     getSinusFunctionSamples({
       size: SIZE,
       sampleRate: SAMPLE_RATE,
-      frequency: 20,
+      frequency: 5,
       amplitude: 0.5,
     }),
+
+    // getSinusFunctionSamples({
+    //   size: SIZE,
+    //   sampleRate: SAMPLE_RATE,
+    //   frequency: 1.5,
+    //   amplitude: 1,
+    // }),
 
     getSinusFunctionSamples({
       size: SIZE,
       sampleRate: SAMPLE_RATE,
-      frequency: 15,
-      amplitude: 1,
+      frequency: 7,
+      amplitude: 1.5,
     }),
   ]
   const sumFn = getSumOfFns(fns)
@@ -316,8 +323,8 @@ const renderBasicComposedSins = () => {
       height: 190,
     },
 
-    [sumFn /*, ...fns*/],
-    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 2, yAxisScaleFactor: 20 }
+    [sumFn, ...fns],
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 20 }
   )
 
   const fftOutputSpectrum = computeFT(sumFn)
@@ -341,23 +348,22 @@ const renderBasicComposedSins = () => {
     peaksCount: fns.length,
   })
 
+  // console.log(JSON.stringify(fns2, null, 2))
+
+  // render data
   const dataToEngine = fns2.map(i => ({
     radius: i.amplitude,
     // TODO: refactor info frequency
     rotationPerSecond: 1 / i.frequency,
   }))
-
-  // console.log('analyze signal')
-  // console.log(JSON.stringify(dataToEngine, null, 2))
   // basic function
   // xd(dataToEngine)
 
-  const fnsData = fns2.map(i =>
+  const fourierFoundFns = fns2.map(i =>
     getSinusFunctionSamples({
+      ...i,
       size: SIZE,
       sampleRate: SAMPLE_RATE,
-      frequency: i.frequency,
-      amplitude: i.amplitude,
     })
   )
 
@@ -369,8 +375,8 @@ const renderBasicComposedSins = () => {
     },
 
     // TODO: add sum function
-    [getSumOfFns(fnsData) /*, ...fnsData*/],
-    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 2, yAxisScaleFactor: 20 }
+    [getSumOfFns(fourierFoundFns), sumFn],
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 20 }
   )
 }
 
@@ -378,12 +384,15 @@ const renderBasicComposedSins = () => {
 const getSignalPeaks = (ftWave: number[]) => {
   return (
     ftWave
+      // is not working!!!!!
+      /*
       .filter((amplitude, index) => {
         const prevVal = ftWave[index - 1] ?? 0
         const nextVal = ftWave[index + 1] ?? 0
         const isPeak = amplitude > prevVal && amplitude > nextVal
         return isPeak
       })
+      */
       // TODO: +1??? there is no 0 element i guess
       .map((amplitude, index) => ({ amplitude, xPosition: index + 1 }))
       .sort((a, b) => a.amplitude - b.amplitude)
@@ -411,6 +420,7 @@ const getFTMetadata = (
   }
 ) => {
   const peaks = getSignalPeaks(ftWave)
+  // console.log(peaks)
   // console.log(peaks)
   // const sortedByValue = ftWave
   //   .map((amplitude, index) => ({ amplitude, index }))

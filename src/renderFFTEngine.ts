@@ -293,8 +293,8 @@ export const xd = (data: any[]) => {
   console.log(data)
   examples.b = data.map(i => ({
     ...i,
-    radius: i.radius * RADIUS_RESIZE * 2,
-    rotationPerSecond: i.rotationPerSecond / 2, // * 20, //  / 8,
+    radius: i.radius * RADIUS_RESIZE,
+    rotationPerSecond: i.rotationPerSecond * 10, // * 20, //  / 8,
     touchPointAngle: 0,
   }))
   startTimeMs = Date.now() // - startTimeMs
