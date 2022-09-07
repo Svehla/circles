@@ -1,6 +1,7 @@
 import { Angle } from './Angle'
 import { distance } from './math'
 import { mapWithPrevValue } from './utils'
+var ft = require('fourier-transform')
 
 type Point = {
   x: number
@@ -147,19 +148,23 @@ const renderFourier2Circles = (
   drawLine(endPointX, drawPoint, { color: '#555' })
 
   // keep just 40 end points
-  endPoints = endPoints.reverse().slice(-480).reverse()
+  endPoints = endPoints.reverse().slice(-180).reverse()
 
   // endPoints = endPoints.map((p, i) => ({ x: p.x - i, y: p.y }))
 
   endPoints.forEach((p, i) => {
     const prevPoint = endPoints[i - 1]
     // uncomment to show nice line
-    const widthByTime = 4 // (endPoints.length - i) / 8
+    const widthByTime = (endPoints.length - i) / 8
     drawLine(prevPoint || p, p, { color: 'red', width: widthByTime })
   })
 }
 // ------------------------------------------------------------
 const p = (x: number, y: number) => ({ x, y })
+
+// configure the space
+
+const space = {}
 
 const image1 = [
   //
@@ -196,6 +201,12 @@ const getSignalFromPoints = (points: Point[]) => {
   return v.flat()
 }
 const renderImageAndExtract = (ms: number) => {
+  clearCanvas()
+  drawRect({ x: 0, y: 0 }, view.width, view.height, {
+    color: '#000',
+  })
+
+  return
   const [firstPoint, ...restPoints] = image1
   let prevPoint = firstPoint
 
@@ -211,13 +222,104 @@ const renderImageAndExtract = (ms: number) => {
     drawPoint({ x: p.x + 300, y: p.y }, { color: 'green', size: 10 })
   })
 
-  console.log(signal.map(({ x }) => x))
+  // console.log(signal.map(({ x }) => x))
 
-  signal.forEach((p, index) => {
-    drawPoint({ x: 100 + index, y: 400 + p.x }, { color: 'yellow', size: 10 })
+  // random normalization constant
+  const xSignal = signal.map(({ x }) => x)
+  const ySignal = signal.map(({ y }) => y)
 
-    drawPoint({ x: 100 + index, y: 700 + p.y }, { color: 'blue', size: 10 })
+  xSignal.forEach((x, index) => {
+    drawPoint({ x: 100 + index, y: 400 + x }, { color: 'yellow', size: 10 })
   })
+  // console.log(xSignal)
+
+  ySignal.forEach((y, index) => {
+    drawPoint({ x: 100 + index, y: 700 + y }, { color: 'blue', size: 10 })
+  })
+
+  const computeFT = () => {
+    var frequency = 440
+    var size = 1024
+    var sampleRate = 44100
+    var inputWaveform = new Float32Array(size)
+
+    const freq1 = 404 // per 100px
+    const freq2 = 4000 // per 100px
+
+    for (var i = 0; i < size; i++) {
+      // inputWaveform[i] = normalizeIntoInterval(xSignal[i], -150, 150)
+      Math.sin(frequency * Math.PI * 2 * (i / sampleRate))
+      // +
+      // Math.sin(10_000 * Math.PI * 2 * (i / sampleRate))
+      // Math.sin((freq1 * Math.PI * 2 * i) / 10) + Math.sin((freq2 * Math.PI * 2 * i) / 40)
+      // Math.sin(i / 0.1) + Math.sin(i / 0.5)
+    }
+
+    // console.log(waveform)
+    var spectrum = ft(inputWaveform)
+
+    // const simpleSpectrum = [] as number[]
+    // const TAKE_EVERY = 1
+    // for (var i = 0; i < spectrum.length / TAKE_EVERY; i++) {
+    //   simpleSpectrum[i] = spectrum[i * TAKE_EVERY]
+    // }
+    // console.log(spectrum)
+
+    // console.log(simpleSpectrum)
+
+    const fftOutput = [] as number[]
+    // convert 32bits arr floats into JS numbers
+    // @ts-expect-error
+    spectrum.forEach(i => fftOutput.push(i))
+
+    let prevPoint = { x: 0, y: fftOutput[0] }
+    fftOutput.forEach((v, index) => {
+      const newPoint = { x: index, y: view.height - 200 - v * 500 }
+
+      drawLine(prevPoint, newPoint, { color: '#6F6', width: 5 })
+      prevPoint = newPoint
+    })
+
+    // render waveform
+    inputWaveform.forEach((v, index) => {
+      const newPoint = { x: index, y: 500 + v * 100 }
+      if (index !== 0) {
+        drawLine(prevPoint, newPoint, { color: '#DDF', width: 1 })
+      }
+      prevPoint = newPoint
+    })
+
+    const sortedByValue = fftOutput
+      .map((v, index) => ({ v, index }))
+      .sort((a, b) => a.v - b.v)
+      .reverse()
+
+    const maxValue1 = sortedByValue[0]
+    const maxValue2 = sortedByValue[1]
+
+    console.log(maxValue1, maxValue2)
+    drawCircle(
+      {
+        x: maxValue1.index,
+        y: 100,
+      },
+      100,
+      { color: 'red' }
+    )
+    drawCircle(
+      {
+        x: maxValue2.index,
+        y: 100,
+      },
+      100,
+      { color: 'red' }
+    )
+
+    // console.log(nWaveform)
+    console.log(fftOutput)
+  }
+
+  computeFT()
 }
 
 // ------------------------------------------------------------
@@ -244,27 +346,27 @@ const examples = {
     {
       radius: 100,
       rotationPerSecond: 4,
-      touchPointAngle: 0,
+      touchPointAngle: Math.PI,
     },
+    // {
+    //   radius: 100,
+    //   rotationPerSecond: -4,
+    //   touchPointAngle: Math.PI,
+    // },
+    // {
+    //   radius: 30,
+    //   rotationPerSecond: 9,
+    //   touchPointAngle: 0,
+    // },
+    // {
+    //   radius: 30,
+    //   rotationPerSecond: -9,
+    //   touchPointAngle: 0,
+    // },
     {
       radius: 100,
-      rotationPerSecond: -4,
-      touchPointAngle: 0,
-    },
-    {
-      radius: 30,
-      rotationPerSecond: 9,
-      touchPointAngle: 0,
-    },
-    {
-      radius: 30,
-      rotationPerSecond: -9,
-      touchPointAngle: 0,
-    },
-    {
-      radius: 10,
-      rotationPerSecond: 10,
-      touchPointAngle: 0,
+      rotationPerSecond: 20,
+      touchPointAngle: Math.PI,
     },
     {
       radius: 10,
@@ -275,15 +377,15 @@ const examples = {
 
   3: [
     {
-      radius: 100,
+      radius: 150,
       rotationPerSecond: 5,
       touchPointAngle: Math.PI / 2,
     },
-    {
-      radius: 100,
-      rotationPerSecond: -5,
-      touchPointAngle: Math.PI / 2,
-    },
+    // {
+    //   radius: 100,
+    //   rotationPerSecond: -5,
+    //   touchPointAngle: Math.PI / 2,
+    // },
     {
       radius: 50,
       rotationPerSecond: 2,
@@ -309,8 +411,7 @@ const renderCycleTick = () => {
       })
       timeMs = performance.now() - stopProgrammeTime - startTimeMs
 
-      // renderFourier2Circles(timeMs, examples['2'], examples['3'])
-      renderImageAndExtract(timeMs)
+      renderFourier2Circles(timeMs, examples['2'], examples['3'])
     }
 
     // uncomment to step it
@@ -322,7 +423,8 @@ const renderCycleTick = () => {
 
 const initRenderUI = () => {
   setCanvasSize()
-  renderCycleTick()
+  // renderCycleTick()
+  renderImageAndExtract(0)
 }
 
 document.addEventListener('keydown', e => {
