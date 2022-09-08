@@ -284,6 +284,10 @@ window.addEventListener('resize', e => {
   // renderCycleTick()
 })
 
+const a = 'ahoj'
+
+const b = a + 'aaa'
+
 // window.onload = initRenderUI
 initRenderUI()
 
@@ -295,8 +299,15 @@ export const xd = (data: any[]) => {
     ...i,
     radius: i.radius * RADIUS_RESIZE,
     rotationPerSecond: i.rotationPerSecond * 10, // * 20, //  / 8,
-    touchPointAngle: 0,
+    touchPointAngle: 0, // -Math.PI / 3,
   }))
+
+  // examples.b = data.map(i => ({
+  //   ...i,
+  //   radius: i.radius * RADIUS_RESIZE,
+  //   rotationPerSecond: i.rotationPerSecond * 10, // * 20, //  / 8,
+  //   touchPointAngle: 0,
+  // }))
   startTimeMs = Date.now() // - startTimeMs
   renderCycleTick()
 }

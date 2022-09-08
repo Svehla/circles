@@ -1,3 +1,4 @@
+import './analyzeImage'
 import './analyzeSignal'
 import './renderFFTEngine'
 import React from 'react'

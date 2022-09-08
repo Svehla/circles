@@ -24,20 +24,6 @@ const drawRect = (point: Point, width: number, height: number, { color = 'black'
   ctx.fill()
 }
 
-const drawPoint = (point: Point, { color = 'black', size = 2 } = {}) => {
-  drawRect(point, size, size, { color })
-  // const _size = size === 1 ? 2 : size
-  // // if (size > 1) {
-  // // ctx.fillStyle = color
-  // ctx.rect(point.x, point.y, _size, _size)
-  // ctx.strokeStyle = color
-  // // ctx.fill()
-  // ctx.stroke()
-  // } else {
-  //   drawLine(point, { x: point.x + size, y: point.y + size }, { color, width: 1 })
-  // }
-}
-
 const drawCircle = (center: Point, radius: number, { color = 'black', width = 2 } = {}) => {
   ctx.beginPath()
   ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI)
@@ -68,44 +54,10 @@ var ctx = c.getContext('2d')
 
 // configure the space
 
-const image1 = [
-  //
-  [100, 150],
-  [400, 200],
-  [300, 450],
-  [100, 450],
-  [200, 210],
-].map(([x, y]) => ({ x, y }))
-
-const RENDER_IMAGE_SPEED_PX_SEC = 100 // px/sec
-
-const getSignalBetween2Points = (p1: Point, p2: Point) => {
-  const xDiff = p2.x - p1.x
-  const yDiff = p2.y - p1.y
-  const dist = Math.floor(distance(p1, p2))
-
-  return Array.from({ length: dist }).map((_, idx) => ({
-    x: p1.x + (xDiff / dist) * idx,
-    y: p1.y + (yDiff / dist) * idx,
-  }))
-}
-
-const getSignalFromPoints = (points: Point[]) => {
-  const [firstPoint, ...restPoints] = points
-
-  let prevPoint = firstPoint
-  const v = restPoints.map(p => {
-    const ret = getSignalBetween2Points(prevPoint, p)
-    prevPoint = p
-    return ret
-  })
-  return v.flat()
-}
-
 // ----------------------------
 // ----------------------------
 // ----------------------------
-const renderChart = (
+export const renderChart = (
   grid: { leftTop: Point; width: number; height: number },
   values: number[][],
   {
@@ -200,7 +152,7 @@ const renderSquareWave = () => {
       (_, i) => Math.sin(frequency * order * Math.PI * 2 * (i / SAMPLE_RATE)) * (1 / order)
     )
 
-  const APPROXIMATION_COUNT = 80
+  const APPROXIMATION_COUNT = 40
   const squareWaveFns = Array.from({ length: APPROXIMATION_COUNT }).map((_, i) =>
     getSinSquareWavePartSample(1 + i * 2)
   )
@@ -282,23 +234,21 @@ const getSinusFunctionSamples = (a: {
 const renderBasicComposedSins = () => {
   // const amplitude = 1
   // the number of samples per second. (1 sec = red line in the chart)
-  const SAMPLE_RATE = 2 ** 10
-  // the number of waves that pass a fixed point in unit time (1sec)
-  // const frequency = 1
+  const SAMPLE_RATE = 2 ** 11 / 6
   const SIZE = 2 ** 10 // 2048
   const fns = [
     getSinusFunctionSamples({
       size: SIZE,
       sampleRate: SAMPLE_RATE,
-      // floatss!!!!!
-      frequency: 5,
+      // float frequencies are not working!!!! => TODO reimplement FFT
+      frequency: 2,
       amplitude: 1.2,
     }),
     getSinusFunctionSamples({
       size: SIZE,
       sampleRate: SAMPLE_RATE,
       frequency: 10,
-      amplitude: 1.2,
+      amplitude: 0.5,
     }),
   ]
   const sumFn = getSumOfFns(fns)
@@ -449,7 +399,7 @@ const getFTMetadata = (
       sampleRate: a.sampleRate,
     }),
   }))
-  console.log(JSON.stringify(data, null, 2))
+  // console.log(JSON.stringify(data, null, 2))
   return data
 }
 
