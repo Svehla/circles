@@ -123,13 +123,14 @@ const setCanvasSize = () => {
 var ctx = c.getContext('2d')
 
 const image1 = [
-  //
-  [10, 10],
+  [0, 0],
+  [10, -200],
   [200, 100],
-  [100, 150],
-  [20, 150],
-  [50, 70],
-  [10, 10],
+  [-200, 100],
+  [0, 50],
+  [-110, 15],
+  [-0, 10],
+  [0, 0],
 ].map(([x, y]) => ({ x, y }))
 
 // const RENDER_IMAGE_SPEED_PX_SEC = 100 // px/sec
@@ -180,6 +181,13 @@ const initRenderUI = () => {
   })
 
   const points = getSignalFromPoints(image1)
+    // shit code
+    // shit code
+    // shit code
+    // make FT work by this shit code
+    .slice(0, 2 ** 10)
+    .map(p => ({ x: p.x, y: -p.y }))
+
   renderPoints(
     {
       leftTop: {
@@ -197,25 +205,24 @@ const initRenderUI = () => {
   const xSignal = points.map(({ x }) => x)
   const ySignal = points.map(({ y }) => y)
 
-  console.log(points)
-
   // @ts-expect-error
   window.kunda = points
+
   renderChart(
     {
       leftTop: {
         x: 10,
         y: 510,
       },
-      width: 700,
+      width: xSignal.length,
       height: 400,
     },
     [xSignal, ySignal],
     {
       // this is int, not float!!!
-      sampleRate: xSignal.length / 2,
+      sampleRate: xSignal.length,
       xAxisScaleFactor: 1,
-      yAxisScaleFactor: 1,
+      yAxisScaleFactor: 0.5,
     }
   )
 }
@@ -225,7 +232,7 @@ const initRenderUI = () => {
 const renderPoints = (
   grid: { leftTop: Point; width: number; height: number },
   points: Point[],
-  { xAxisScaleFactor = 1, yAxisScaleFactor = 1, color = 'white' } = {}
+  { /*xAxisScaleFactor = 1, yAxisScaleFactor = 1,*/ color = 'white' } = {}
 ) => {
   drawRect(grid.leftTop, grid.width, grid.height, {
     color: 'white',
@@ -261,21 +268,38 @@ const renderPoints = (
     { color: '#AAA' }
   )
 
-  drawCircle(centerPoint, 10, { color: 'red' })
-
-  points
+  const pointsToRender = points
     // invert axis!!!
     .map(p => ({ x: p.x, y: -p.y }))
-    .forEach(p => {
-      drawCircle(
-        {
-          x: centerPoint.x + p.x,
-          y: centerPoint.y + p.y,
-        },
-        2,
-        { color }
-      )
-    })
+
+  pointsToRender.forEach(p => {
+    drawCircle(
+      {
+        x: centerPoint.x + p.x,
+        y: centerPoint.y + p.y,
+      },
+      2,
+      { color }
+    )
+  })
+
+  // red circle is the start of the image signal
+  drawCircle(
+    {
+      x: centerPoint.x + pointsToRender[0].x,
+      y: centerPoint.y + pointsToRender[0].y,
+    },
+    10,
+    { color: 'red', width: 5 }
+  )
+  drawCircle(
+    {
+      x: centerPoint.x + pointsToRender[20].x,
+      y: centerPoint.y + pointsToRender[20].y,
+    },
+    10,
+    { color: 'red', width: 2 }
+  )
 }
 
 initRenderUI()

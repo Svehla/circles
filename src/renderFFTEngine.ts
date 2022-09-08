@@ -146,7 +146,7 @@ const renderFourier2Circles = (
   // keep just 40 end points
   endPoints = endPoints.reverse().slice(-1200).reverse()
   // + 1 => depends on frameRate
-  endPoints = endPoints.map(i => ({ ...i, x: i.x + 3 }))
+  // endPoints = endPoints.map(i => ({ ...i, x: i.x + 3 }))
 
   // endPoints = endPoints.map((p, i) => ({ x: p.x - i, y: p.y }))
 
@@ -293,21 +293,29 @@ initRenderUI()
 
 // ---------------
 
-export const xd = (data: any[]) => {
+export const setupLeftCirclesXD = (data: any[]) => {
   // console.log(data)
   examples.b = data.map(i => ({
     ...i,
-    radius: i.radius * RADIUS_RESIZE,
-    rotationPerSecond: i.rotationPerSecond * 10, // * 20, //  / 8,
-    touchPointAngle: 0, // -Math.PI / 3,
+    radius: i.radius,
+    rotationPerSecond: i.rotationPerSecond, //  * 10, // * 20, //  / 8,
+    touchPointAngle: 0,
+  }))
+}
+
+export const setupTopCirclesXD = (data: any[]) => {
+  // console.log(data)
+  examples.a = data.map(i => ({
+    ...i,
+    radius: i.radius,
+    rotationPerSecond: i.rotationPerSecond,
+    touchPointAngle: -Math.PI / 2,
   }))
 
-  // examples.b = data.map(i => ({
-  //   ...i,
-  //   radius: i.radius * RADIUS_RESIZE,
-  //   rotationPerSecond: i.rotationPerSecond * 10, // * 20, //  / 8,
-  //   touchPointAngle: 0,
-  // }))
+  // renderCycleTick()
+}
+
+export const runCircles = () => {
   startTimeMs = Date.now() // - startTimeMs
   renderCycleTick()
 }

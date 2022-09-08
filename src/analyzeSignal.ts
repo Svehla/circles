@@ -1,5 +1,5 @@
 import { distance } from './math'
-import { xd } from './renderFFTEngine'
+import { runCircles, setupLeftCirclesXD, setupTopCirclesXD } from './renderFFTEngine'
 var ft = require('fourier-transform')
 
 type Point = {
@@ -126,7 +126,7 @@ const computeFT = (wave: number[]) => {
 
 // TODO: add transpose matrix to keep the code simpler... but I don't care tbh
 const getSumOfFns = (fns: number[][]) => {
-  return fns[0].map((v, index) => {
+  return (fns?.[0] ?? []).map((v, index) => {
     let sum = 0
     for (let i = 0; i < fns.length; i++) {
       sum += fns[i][index]
@@ -152,7 +152,7 @@ const renderSquareWave = () => {
       (_, i) => Math.sin(frequency * order * Math.PI * 2 * (i / SAMPLE_RATE)) * (1 / order)
     )
 
-  const APPROXIMATION_COUNT = 40
+  const APPROXIMATION_COUNT = 10
   const squareWaveFns = Array.from({ length: APPROXIMATION_COUNT }).map((_, i) =>
     getSinSquareWavePartSample(1 + i * 2)
   )
@@ -195,14 +195,21 @@ const renderSquareWave = () => {
     })
   )
 
-  const dataToEngine = fns2.map(i => ({
-    radius: i.amplitude,
-    rotationPerSecond: 1 / i.frequency,
-    touchPointAngle: 0,
-  }))
+  const dataToEngine = fns2
+    .map(i => ({
+      radius: i.amplitude,
+      rotationPerSecond: 1 / i.frequency,
+      touchPointAngle: 0,
+    }))
+    .map(i => ({
+      // setup nice UI
+      radius: i.radius * 150,
+      rotationPerSecond: i.rotationPerSecond * 5,
+      touchPointAngle: i.touchPointAngle,
+    }))
 
   // square wave
-  xd(dataToEngine)
+  setupLeftCirclesXD(dataToEngine)
 
   renderChart(
     {
@@ -215,6 +222,8 @@ const renderSquareWave = () => {
     [getSumOfFns(fnsData), sumFn],
     { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 50 }
   )
+
+  runCircles()
 }
 
 const getSinusFunctionSamples = (a: {
@@ -232,26 +241,39 @@ const getSinusFunctionSamples = (a: {
   )
 
 const renderBasicComposedSins = () => {
+  // hovno hovno hovno
+
+  const SLOW_ANIMATION_COEFFICIENT = 10
+  const APPROXIMATION_COUNT = 10
+  const REPEAT_DATA_COEFFICIENT = 2
+
+  // TODO: no idea why i put minus sign here
+  // @ts-ignore
+  const ySignal = window.kunda.map(({ y }) => y)
+
+  // make more signal sample to keep FT working better
+  const ySumFn = Array.from({ length: 2 ** REPEAT_DATA_COEFFICIENT }).flatMap(() => ySignal)
+
   // const amplitude = 1
   // the number of samples per second. (1 sec = red line in the chart)
-  const SAMPLE_RATE = 2 ** 11 / 6
-  const SIZE = 2 ** 10 // 2048
-  const fns = [
-    getSinusFunctionSamples({
-      size: SIZE,
-      sampleRate: SAMPLE_RATE,
-      // float frequencies are not working!!!! => TODO reimplement FFT
-      frequency: 2,
-      amplitude: 1.2,
-    }),
-    getSinusFunctionSamples({
-      size: SIZE,
-      sampleRate: SAMPLE_RATE,
-      frequency: 10,
-      amplitude: 0.5,
-    }),
-  ]
-  const sumFn = getSumOfFns(fns)
+  const SAMPLE_RATE = ySumFn.length // 2 ** 11 / 6
+  const SIZE = ySumFn.length // 2 ** 10 // 2048
+  // const fns = [
+  //   // getSinusFunctionSamples({
+  //   //   size: SIZE,
+  //   //   sampleRate: SAMPLE_RATE,
+  //   //   // float frequencies are not working!!!! => TODO reimplement FFT
+  //   //   frequency: 2,
+  //   //   amplitude: 1.2,
+  //   // }),
+  //   // getSinusFunctionSamples({
+  //   //   size: SIZE,
+  //   //   sampleRate: SAMPLE_RATE,
+  //   //   frequency: 10,
+  //   //   amplitude: 0.5,
+  //   // }),
+  // ]
+  // const sumFn = getSumOfFns(fns)
 
   renderChart(
     {
@@ -260,11 +282,11 @@ const renderBasicComposedSins = () => {
       height: 190,
     },
 
-    [sumFn, ...fns],
-    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 20 }
+    [ySumFn /*, ...fns*/],
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 0.2 }
   )
 
-  const fftOutputSpectrum = computeFT(sumFn)
+  const fftOutputSpectrum = computeFT(ySumFn)
 
   // height of the bar === amplitude
   // X coords === frequency
@@ -276,23 +298,25 @@ const renderBasicComposedSins = () => {
     },
 
     [fftOutputSpectrum],
-    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 50 }
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 1 }
   )
 
   const fns2 = getFTMetadata(fftOutputSpectrum, {
     size: SIZE,
     sampleRate: SAMPLE_RATE,
-    maxPeaksCount: fns.length,
+    maxPeaksCount: APPROXIMATION_COUNT, // fns.length,
   })
 
+  // console.log(fns2)
+
   // render data
-  const dataToEngine = fns2.map(i => ({
-    radius: i.amplitude,
-    // TODO: refactor info frequency
-    rotationPerSecond: 1 / i.frequency,
-  }))
-  // basic function
-  // xd(dataToEngine)
+  const yDataToEngine = fns2
+    .map(i => ({
+      radius: i.amplitude,
+      // TODO: refactor info frequency
+      rotationPerSecond: 1 / i.frequency,
+    }))
+    .map(i => ({ ...i, rotationPerSecond: i.rotationPerSecond * SLOW_ANIMATION_COEFFICIENT }))
 
   const fourierFoundFns = fns2.map(i =>
     getSinusFunctionSamples({
@@ -310,9 +334,86 @@ const renderBasicComposedSins = () => {
     },
 
     // TODO: add sum function
-    [getSumOfFns(fourierFoundFns), sumFn],
-    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 20 }
+    [getSumOfFns(fourierFoundFns), ySumFn],
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 0.2 }
   )
+
+  // setup data to render cycles
+  setupLeftCirclesXD(yDataToEngine)
+
+  // --------------------------------------
+  // --------------------------------------
+  // --------------------------------------
+  // --------------- smazat ---------------
+
+  // @ts-expect-error
+  const xSignal = window.kunda.map(({ x }) => x)
+  const xSumFns = Array.from({ length: 2 ** REPEAT_DATA_COEFFICIENT }).flatMap(() => xSignal)
+
+  renderChart(
+    {
+      leftTop: { x: 10, y: 610 },
+      width: SIZE,
+      height: 190,
+    },
+
+    [xSumFns /*, ...fns*/],
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 0.2 }
+  )
+
+  const xFftOutputSpectrum = computeFT(xSumFns)
+
+  // height of the bar === amplitude
+  // X coords === frequency
+  renderChart(
+    {
+      leftTop: { x: 10, y: 810 },
+      width: SIZE,
+      height: 190,
+    },
+
+    [xFftOutputSpectrum],
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 1 }
+  )
+
+  const xFns2 = getFTMetadata(xFftOutputSpectrum, {
+    size: SIZE,
+    sampleRate: SAMPLE_RATE,
+    maxPeaksCount: APPROXIMATION_COUNT,
+  })
+
+  const xDataToEngine = xFns2
+    .map(i => ({
+      radius: i.amplitude,
+      // TODO: refactor info frequency
+      rotationPerSecond: 1 / i.frequency,
+    }))
+    .map(i => ({ ...i, rotationPerSecond: i.rotationPerSecond * SLOW_ANIMATION_COEFFICIENT }))
+
+  const xFourierFoundFns = xFns2.map(i =>
+    getSinusFunctionSamples({
+      ...i,
+      size: SIZE,
+      sampleRate: SAMPLE_RATE,
+    })
+  )
+
+  renderChart(
+    {
+      leftTop: { x: 10, y: 1010 },
+      width: SIZE,
+      height: 190,
+    },
+
+    // TODO: add sum function
+    [getSumOfFns(xFourierFoundFns), xSumFns],
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 0.2 }
+  )
+
+  setupTopCirclesXD(xDataToEngine)
+  // --------------------------------------------
+
+  runCircles()
 }
 
 // not sure if it workings well => will be better to have only peaks
@@ -322,17 +423,8 @@ const getSignalPeaks = (ftWave: number[]) => {
     .filter((lol, index) => {
       const amplitude = lol.amplitude
       const prevVal = ftWave[index - 1] ?? 0
-      // const p2 = ftWave[index - 2] ?? 0
-      // const p3 = ftWave[index - 3] ?? 0
       const nextVal = ftWave[index + 1] ?? 0
-      // const n2 = ftWave[index + 2] ?? 0
-      // const n3 = ftWave[index + 3] ?? 0
-      const isPeak =
-        // amplitude > p2 &&
-        // amplitude > p3 &&
-        amplitude > prevVal && amplitude > nextVal
-      // amplitude > n2 &&
-      // amplitude > n3
+      const isPeak = amplitude > prevVal && amplitude > nextVal
       return isPeak
     })
     .sort((a, b) => a.amplitude - b.amplitude)
@@ -377,19 +469,20 @@ const getFTMetadata = (
   // console.log(peaks)
 
   // broken debug GUI
-  peaks.forEach(v => {
-    drawLine(
-      {
-        x: 10 + v.xPosition,
-        y: 300,
-      },
-      {
-        x: 10 + v.xPosition,
-        y: 300 + v.amplitude * 100,
-      },
-      { width: 1, color: 'green' }
-    )
-  })
+  // peaks.forEach(v => {
+  //   drawLine(
+  //     {
+  //       x: 10 + v.xPosition,
+  //       y: 300,
+  //     },
+  //     {
+  //       x: 10 + v.xPosition,
+  //       y: 300 + v.amplitude * 100,
+  //     },
+  //     { width: 1, color: 'green' }
+  //   )
+  // })
+  // console.log(peaks)
 
   const data = peaks.slice(0, a.maxPeaksCount).map(f => ({
     amplitude: f.amplitude,
@@ -410,7 +503,8 @@ const initRenderUI = () => {
     color: '#000',
   })
 
-  renderSquareWave()
+  // renderSquareWave()
+
   renderBasicComposedSins()
 }
 
