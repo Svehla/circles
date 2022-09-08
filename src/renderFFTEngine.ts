@@ -284,11 +284,6 @@ window.addEventListener('resize', e => {
   // renderCycleTick()
 })
 
-const a = 'ahoj'
-
-const b = a + 'aaa'
-
-// window.onload = initRenderUI
 initRenderUI()
 
 // ---------------
@@ -309,7 +304,9 @@ export const setupTopCirclesXD = (data: any[]) => {
     ...i,
     radius: i.radius,
     rotationPerSecond: i.rotationPerSecond,
-    touchPointAngle: -Math.PI / 2,
+
+    // touchPointAngle should be computed from the first point of the image
+    touchPointAngle: 0, // -Math.PI / 2,
   }))
 
   // renderCycleTick()

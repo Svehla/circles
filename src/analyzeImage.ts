@@ -122,17 +122,51 @@ const setCanvasSize = () => {
 // @ts-expect-error
 var ctx = c.getContext('2d')
 
+const radius = 50
+const DETAIL_COEFFICIENT = 50
 const image1 = [
-  [0, 0],
-  [10, -200],
-  [200, 100],
-  [-200, 100],
-  [0, 50],
-  [-110, 15],
-  [-0, 10],
-  [0, 0],
-].map(([x, y]) => ({ x, y }))
+  // ...Array.from({ length: DETAIL_COEFFICIENT * Math.PI * 2 * radius }).map((_, i) => [
+  //   Math.sin(i / DETAIL_COEFFICIENT) * radius,
+  //   Math.cos(i / DETAIL_COEFFICIENT) * radius,
+  // ]),
+  [193, 47],
+  [140, 204],
+  [123, 193],
+  [99, 189],
+  [74, 196],
+  [58, 213],
+  [49, 237],
+  [52, 261],
+  [65, 279],
+  [86, 292],
+  [113, 295],
+  [135, 282],
+  [152, 258],
+  [201, 95],
+  [212, 127],
+  [218, 150],
+  [213, 168],
+  [201, 185],
+  [192, 200],
+  [203, 214],
+  [219, 205],
+  [233, 191],
+  [242, 170],
+  [244, 149],
+  [242, 131],
+  [233, 111],
+  // [0, 0],
+  // [10, -200],
+  // [20, -180],
+  // [200, 100],
+  // [-200, 100],
+  // [0, 50],
+  // [-110, 15],
+  // [-0, 10],
+  // [0, 0],
+].map(([x, y]) => ({ x: x * 1.2 - 200, y: y * 1.2 - 180 }))
 
+// console.log(image1)
 // const RENDER_IMAGE_SPEED_PX_SEC = 100 // px/sec
 // --- calculate points for image ---
 
@@ -147,7 +181,7 @@ const getSignalBetween2Points = (p1: Point, p2: Point) => {
   }))
 }
 
-const getSignalFromPoints = (points: Point[]) => {
+const getLinearSignalFromPoints = (points: Point[]) => {
   /*signalSize*/
   const frequency = 1
 
@@ -180,7 +214,37 @@ const initRenderUI = () => {
     color: '#000',
   })
 
-  const points = getSignalFromPoints(image1)
+  // TODO: uncomment
+  const linearPoints = getLinearSignalFromPoints(image1)
+  // const linearPoints = image1
+
+  // filter to test density
+  // .filter((_, i) => i % 5 === 0)
+
+  /*
+  const DENSITY_MULTIPLIER = 1 // generate metadata between points
+
+  // make X times more points to lower density
+  const x = linearPoints.flatMap((point, index) => {
+    const prevPoint = linearPoints[index - 1]
+
+    if (!prevPoint ) return []
+
+    // const dist = distance(prevPoint, point)
+    const xDiff = prevPoint.x - point.x
+    const yDiff = prevPoint.y - point.y
+
+    return [
+      ...Array.from({ length: DENSITY_MULTIPLIER }).map((_, i) => ({
+        x: prevPoint.x + (xDiff / DENSITY_MULTIPLIER) * i,
+        y: prevPoint.y + (yDiff / DENSITY_MULTIPLIER) * i,
+      })),
+      point,
+    ]
+  })
+*/
+
+  const points = linearPoints // getLinearSignalFromPoints(image1)
     // shit code
     // shit code
     // shit code
@@ -202,11 +266,12 @@ const initRenderUI = () => {
     { color: 'green' }
   )
 
-  const xSignal = points.map(({ x }) => x)
-  const ySignal = points.map(({ y }) => y)
-
+  // mega global object
   // @ts-expect-error
   window.kunda = points
+
+  const xSignal = points.map(({ x }) => x)
+  const ySignal = points.map(({ y }) => y)
 
   renderChart(
     {
@@ -272,16 +337,19 @@ const renderPoints = (
     // invert axis!!!
     .map(p => ({ x: p.x, y: -p.y }))
 
-  pointsToRender.forEach(p => {
-    drawCircle(
-      {
-        x: centerPoint.x + p.x,
-        y: centerPoint.y + p.y,
-      },
-      2,
-      { color }
-    )
-  })
+  pointsToRender
+    // make user UI sure that we have analogue continuous signal
+    .filter((_, i) => i % 10 === 0)
+    .forEach(p => {
+      drawCircle(
+        {
+          x: centerPoint.x + p.x,
+          y: centerPoint.y + p.y,
+        },
+        2,
+        { color }
+      )
+    })
 
   // red circle is the start of the image signal
   drawCircle(

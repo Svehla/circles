@@ -243,9 +243,10 @@ const getSinusFunctionSamples = (a: {
 const renderBasicComposedSins = () => {
   // hovno hovno hovno
 
-  const SLOW_ANIMATION_COEFFICIENT = 10
+  const SLOW_ANIMATION_COEFFICIENT = 20
   const APPROXIMATION_COUNT = 10
-  const REPEAT_DATA_COEFFICIENT = 2
+  // TODO: is algorithm bad or we just don't repeit well
+  const REPEAT_DATA_COEFFICIENT = 0 // 0 === identity
 
   // TODO: no idea why i put minus sign here
   // @ts-ignore
@@ -275,6 +276,8 @@ const renderBasicComposedSins = () => {
   // ]
   // const sumFn = getSumOfFns(fns)
 
+  // console.log(ySumFn.length)
+
   renderChart(
     {
       leftTop: { x: 10, y: 0 },
@@ -298,7 +301,7 @@ const renderBasicComposedSins = () => {
     },
 
     [fftOutputSpectrum],
-    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1, yAxisScaleFactor: 1 }
+    { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 10, yAxisScaleFactor: 0.5 }
   )
 
   const fns2 = getFTMetadata(fftOutputSpectrum, {
