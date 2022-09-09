@@ -1,46 +1,11 @@
+import { getCanvasDrawMethods } from './canvas'
+
 type Point = {
   x: number
   y: number
 }
 
 // --------------------------- canvas utils ---------------------------
-const drawLine = (point1: Point, point2: Point, { color = 'black', width = 2 } = {}) => {
-  ctx.beginPath()
-  ctx.moveTo(point1.x, point1.y)
-  ctx.lineTo(point2.x, point2.y)
-  ctx.lineWidth = width
-  ctx.strokeStyle = color
-  ctx.stroke()
-}
-
-const drawRect = (point: Point, width: number, height: number, { color = 'black' } = {}) => {
-  ctx.beginPath()
-  ctx.rect(point.x, point.y, width, height)
-  ctx.fillStyle = color
-  ctx.fill()
-}
-
-const drawPoint = (point: Point, { color = 'black', size = 2 } = {}) => {
-  drawRect(point, size, size, { color })
-  // const _size = size === 1 ? 2 : size
-  // // if (size > 1) {
-  // // ctx.fillStyle = color
-  // ctx.rect(point.x, point.y, _size, _size)
-  // ctx.strokeStyle = color
-  // // ctx.fill()
-  // ctx.stroke()
-  // } else {
-  //   drawLine(point, { x: point.x + size, y: point.y + size }, { color, width: 1 })
-  // }
-}
-
-const drawCircle = (center: Point, radius: number, { color = 'black', width = 2 } = {}) => {
-  ctx.beginPath()
-  ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI)
-  ctx.strokeStyle = color
-  ctx.lineWidth = width
-  ctx.stroke()
-}
 
 const view = {
   width: window.innerWidth,
@@ -61,6 +26,8 @@ const setCanvasSize = () => {
 // @ts-expect-error
 var ctx = c.getContext('2d')
 
+const draw = getCanvasDrawMethods(ctx, view.width)
+
 let timeMs = Date.now()
 let startTimeMs = Date.now()
 // little abstraction to enable stop and continue the animation
@@ -78,7 +45,7 @@ type FourierCircle = {
 }
 
 const drawFourierCircle = (time: number, startPoint: Point, meta: FourierCircle) => {
-  drawCircle(startPoint, meta.radius, { color: '#BBF' })
+  draw.circle(startPoint, meta.radius, { color: '#BBF' })
 
   // draw rotating point on Line
   const percentageAngle = normalizeIntoInterval(
@@ -94,7 +61,7 @@ const drawFourierCircle = (time: number, startPoint: Point, meta: FourierCircle)
     y: startPoint.y + Math.cos(angleRad) * meta.radius,
   }
 
-  drawLine(startPoint, endPoint, { color: '#66F' })
+  draw.line(startPoint, endPoint, { color: '#66F' })
   return endPoint
 }
 
@@ -140,8 +107,8 @@ const renderFourier2Circles = (
 
   endPoints = [drawPoint, ...endPoints]
 
-  drawLine(endPointY, drawPoint, { color: '#555' })
-  drawLine(endPointX, drawPoint, { color: '#555' })
+  draw.line(endPointY, drawPoint, { color: '#555' })
+  draw.line(endPointX, drawPoint, { color: '#555' })
 
   // keep just 40 end points
   endPoints = endPoints.reverse().slice(-1200).reverse()
@@ -154,7 +121,7 @@ const renderFourier2Circles = (
     const prevPoint = endPoints[i - 1]
     // uncomment to show nice line
     const widthByTime = 4 // (endPoints.length - i) / 8
-    drawLine(prevPoint || p, p, { color: 'red', width: widthByTime })
+    draw.line(prevPoint || p, p, { color: 'red', width: widthByTime })
   })
 }
 // ------------------------------------------------------------
@@ -248,7 +215,7 @@ const renderCycleTick = () => {
       // stopProgrammeTime = Date.now() - timeMs
     } else {
       clearCanvas()
-      drawRect({ x: 0, y: 0 }, view.width, view.height, {
+      draw.rect({ x: 0, y: 0 }, view.width, view.height, {
         color: 'black',
       })
 
