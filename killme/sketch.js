@@ -11,8 +11,8 @@ const FOURIER = 1
 let x = []
 let fourierX
 window.time = 0
-window.drawLine = false
-window.stop = true
+window.drawLine = true
+window.stop = false
 let path = []
 let drawing = []
 let state = -1
@@ -118,8 +118,8 @@ function draw() {
     path.unshift(v)
     beginShape()
     noFill()
-    strokeWeight(2)
-    stroke(255, 0, 255)
+    strokeWeight(4)
+    stroke(255, 50, 0)
     for (let i = 0; i < path.length; i++) {
       if (window.drawLine) {
         vertex(path[i].x, path[i].y)
