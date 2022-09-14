@@ -1,5 +1,6 @@
 import './analyzeImage'
 import './analyzeSignal'
+import './dft'
 import './renderFFTEngine'
 import React from 'react'
 import ReactDOM from 'react-dom/client'

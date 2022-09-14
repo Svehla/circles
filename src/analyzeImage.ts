@@ -33,11 +33,14 @@ const image1 = [
   // triangles
 
   // square
-  // [0, DETAIL_COEFFICIENT],
+  // [0, 0],
   // [DETAIL_COEFFICIENT, 0],
-  // [0, -DETAIL_COEFFICIENT],
-  // [-DETAIL_COEFFICIENT, 0],
+  // [DETAIL_COEFFICIENT, DETAIL_COEFFICIENT],
   // [0, DETAIL_COEFFICIENT],
+  // // [0, DETAIL_COEFFICIENT],
+  // // [DETAIL_COEFFICIENT, DETAIL_COEFFICIENT],
+  // // [DETAIL_COEFFICIENT, 0],
+  // [0, 0],
 
   // circle
   // ...Array.from({ length: DETAIL_COEFFICIENT * Math.PI * 2 * radius }).map((_, i) => [
@@ -144,12 +147,16 @@ const initRenderUI = () => {
     color: '#000',
   })
 
+  const signalPeriodSize = 2 ** 10
   const shapePerimeter = getPointsPerimeter(image1)
-  const signalPeriodSize = 2 ** 9
   const step = shapePerimeter / signalPeriodSize
 
   const linearPoints = getLinearSignalFromPoints(image1, step)
+  // TODO: normalization is not working properly because it change the position of the shape object into the "center"
+  // is that okey?
   const normalizedLinearPoints = normalize2DSignalIntoN1toP1(linearPoints)
+
+  // console.log(normalizedLinearPoints)
 
   // something is broken (maybe float rounds) => make sure that signal is power of 2
   const points = normalizedLinearPoints
@@ -217,18 +224,21 @@ const initRenderUI = () => {
   const kunda = xSignal.map((x, i) => ({ x, y: ySignal[i] }))
   */
 
-  const xSignal = shiftFnPeriod(
-    points.map(({ x }) => x),
-    250
-  )
-  const ySignal = shiftFnPeriod(
-    points.map(({ y }) => y),
-    70
-  )
+  const xSignal = points.map(({ x }) => x)
+  const ySignal = points.map(({ y }) => y)
+
+  // const xSignal = shiftFnPeriod(
+  //   points.map(({ x }) => x),
+  //   0
+  // )
+  // const ySignal = shiftFnPeriod(
+  //   points.map(({ y }) => y),
+  //   0
+  // )
 
   const pointsFromSignal = xSignal.map((x, i) => ({ x, y: ySignal[i] }))
 
-  render2DSignal(pointsFromSignal)
+  // render2DSignal(pointsFromSignal)
   // show chart with signals
 
   draw.chart(
@@ -297,20 +307,21 @@ const renderPoints = (
 
   const pointsToRender = points
     .map(p => ({
-      x: p.x * IMAGE_ZOOM,
-      y: p.y * IMAGE_ZOOM,
+      // + IMAGE_ZOOM
+      x: p.x,
+      y: p.y,
     }))
     // invert axis!!!
     .map(p => ({ x: p.x, y: -p.y }))
 
   pointsToRender
     // make user UI sure that we have analogue continuous signal
-    .filter((_, i) => i % 5 === 0)
+    .filter((_, i) => i % 7 === 0)
     .forEach(p => {
       draw.circle(
         {
-          x: centerPoint.x + p.x,
-          y: centerPoint.y + p.y,
+          x: centerPoint.x + p.x * IMAGE_ZOOM,
+          y: centerPoint.y + p.y * IMAGE_ZOOM,
         },
         2,
         { color }

@@ -27,3 +27,5 @@ derivative = 0
 min max = -1 & +1
 
 compute left/right shift of the final sins
+
+float frequencies are not able to get by FT

@@ -1,3 +1,4 @@
+import { Complex, dft } from './dft'
 import { Point, getCanvasDrawMethods } from './canvas'
 import { runCircles, setupLeftCirclesXD, setupTopCirclesXD } from './renderFFTEngine'
 var ft = require('fourier-transform')
@@ -31,6 +32,7 @@ const computeFT = (wave: number[]) => {
   var inputWaveform = new Float32Array(wave)
   var fftOutputSpectrum = ft(inputWaveform) as number[]
   return fftOutputSpectrum
+  // return dft(wave)
 }
 
 // TODO: add transpose matrix to keep the code simpler... but I don't care tbh
@@ -42,6 +44,70 @@ export const getSumOfFns = (fns: number[][]) => {
     }
     return sum
   })
+}
+
+const renderGivingUpWave = () => {
+  // const signal = Array.from({ length: 30 }).map((_, i) => i)
+  const signal = [
+    // 100, 100, 100, -100, -100, -100, 100, 100, 100, -100, -100, -100,
+    ...Array.from({ length: 100 }).map((_, i) => i),
+    //   // ...Array.from({ length: 100 }).map((_, i) => 100 - i),
+    // console.log(signal)
+    // getSinusFunctionSamples({
+    //   size: 200,
+    //   sampleRate: 10,
+    //   frequency: 3,
+    //   amplitude: 200,
+    // })
+    // [
+    // 100, 100, 100, -100, -100, -100, 100, 100, 100, -100, -100, -100,
+    //   -100,
+    // ].map(i => i + 100)
+  ]
+
+  const fourierY = dft(signal.map(i => new Complex(i, i)))
+  // .filter(({ im }) => im > 0)
+  // .filter(({ re }) => re > 0)
+  // .sort((a, b) => b.amplitude - a.amplitude)
+
+  // draw.chart(
+  //   {
+  //     leftTop: { x: 10, y: 10 },
+  //     width: view.width,
+  //     height: 190,
+  //   },
+  //   [
+  //     fourierY.map(({ re }) => re),
+  //     //  fourierY.map(({ im }) => im)
+  //   ],
+  //   { sampleRate: 1000, xAxisScaleFactor: 1 }
+  // )
+
+  // draw.chart(
+  //   {
+  //     leftTop: { x: 10, y: 210 },
+  //     width: view.width,
+  //     height: 190,
+  //   },
+  //   [
+  //     // fourierY.map(({ re }) => re),
+  //     fourierY.map(({ im }) => im),
+  //   ],
+  //   { sampleRate: 1000, xAxisScaleFactor: 1 }
+  // )
+
+  console.log('ahoj')
+  console.log(fourierY)
+
+  setupLeftCirclesXD(
+    fourierY.map(i => ({
+      radius: i.amp,
+      phase: i.phase,
+      frequency: i.freq * 2,
+    }))
+  )
+
+  runCircles()
 }
 
 // TODO: xAxisScaleFactor does not scale background
@@ -104,14 +170,14 @@ const renderSquareWave = () => {
   const dataToEngine = fns2
     .map(i => ({
       radius: i.amplitude,
-      rotationPerSecond: 1 / i.frequency,
-      touchPointAngle: 0,
+      frequency: i.frequency,
+      phase: 0,
     }))
     .map(i => ({
       // setup nice UI
       radius: i.radius * 150,
-      rotationPerSecond: i.rotationPerSecond * 5,
-      touchPointAngle: i.touchPointAngle,
+      frequency: i.frequency * 5,
+      phase: i.phase,
     }))
 
   // square wave
@@ -145,6 +211,7 @@ export const getSinusFunctionSamples = (a: {
     // todo: check this formula if its working well
     (_, i) => Math.sin(a.frequency * Math.PI * 2 * (i / a.sampleRate)) * a.amplitude
   )
+
 export const render2DSignal = (kunda: Point[]) => {
   const SLOW_ANIMATION_COEFFICIENT = 2
   const APPROXIMATION_COUNT = 10
@@ -221,11 +288,12 @@ export const render2DSignal = (kunda: Point[]) => {
     .map(i => ({
       radius: i.amplitude,
       // TODO: refactor info frequency
-      rotationPerSecond: 1 / i.frequency,
+      frequency: i.frequency,
     }))
     .map(i => ({
       radius: i.radius * 100,
-      rotationPerSecond: i.rotationPerSecond * SLOW_ANIMATION_COEFFICIENT,
+      frequency: i.frequency * SLOW_ANIMATION_COEFFICIENT,
+      phase: 0,
     }))
 
   // setup data to render cycles
@@ -271,17 +339,6 @@ export const render2DSignal = (kunda: Point[]) => {
     maxPeaksCount: APPROXIMATION_COUNT,
   })
 
-  const xDataToEngine = xFns2
-    .map(i => ({
-      radius: i.amplitude,
-      // TODO: refactor info frequency
-      rotationPerSecond: 1 / i.frequency,
-    }))
-    .map(i => ({
-      radius: i.radius * 100,
-      rotationPerSecond: i.rotationPerSecond * SLOW_ANIMATION_COEFFICIENT,
-    }))
-
   const xFourierFoundFns = xFns2.map(i =>
     getSinusFunctionSamples({
       ...i,
@@ -301,6 +358,18 @@ export const render2DSignal = (kunda: Point[]) => {
     [getSumOfFns(xFourierFoundFns), xSumFns],
     { sampleRate: SAMPLE_RATE, xAxisScaleFactor: 1 }
   )
+
+  const xDataToEngine = xFns2
+    .map(i => ({
+      radius: i.amplitude,
+      // TODO: refactor info frequency
+      frequency: i.frequency,
+    }))
+    .map(i => ({
+      radius: i.radius * 100,
+      frequency: i.frequency * SLOW_ANIMATION_COEFFICIENT,
+      phase: 0,
+    }))
 
   setupTopCirclesXD(xDataToEngine)
   // --------------------------------------------
@@ -368,6 +437,7 @@ const initRenderUI = () => {
     color: '#000',
   })
 
+  renderGivingUpWave()
   // renderSquareWave()
 
   // render2DSignal()

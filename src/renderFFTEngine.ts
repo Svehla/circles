@@ -38,34 +38,36 @@ const normalizeIntoInterval = (val: number, max: number, min: number) => (val - 
 
 let endPoints = [] as Point[]
 
-type FourierCircle = {
+type SinFnDesc = {
   radius: number
-  rotationPerSecond: number
-  touchPointAngle: number
+  frequency: number
+  phase: number
 }
 
-const drawFourierCircle = (time: number, startPoint: Point, meta: FourierCircle) => {
+const drawFourierCircle = (time: number, startPoint: Point, meta: SinFnDesc) => {
   draw.circle(startPoint, meta.radius, { color: '#BBF' })
 
+  const rotationsPerSecond = 1 / meta.frequency
   // draw rotating point on Line
   const percentageAngle = normalizeIntoInterval(
-    time % (meta.rotationPerSecond * 1_000),
-    meta.rotationPerSecond * 1_000,
+    time % (rotationsPerSecond * 1_000),
+    rotationsPerSecond * 1_000,
     0
   )
 
-  // minus sign to clockwise rotation
-  const angleRad = percentageAngle * (2 * Math.PI) + meta.touchPointAngle + Math.PI / 2
+  // const angleRad = meta.frequency * time + meta.phase + Math.PI / 2
+  const angleRad = percentageAngle * (2 * Math.PI) + meta.phase + Math.PI / 2
   const endPoint = {
-    x: startPoint.x + Math.sin(angleRad) * meta.radius,
-    y: startPoint.y + Math.cos(angleRad) * meta.radius,
+    // x sin or cos?
+    x: startPoint.x + Math.cos(angleRad) * meta.radius,
+    y: startPoint.y + Math.sin(angleRad) * meta.radius,
   }
 
   draw.line(startPoint, endPoint, { color: '#66F' })
   return endPoint
 }
 
-const renderFourierCircles = (time: number, startPoint: Point, fftCircles: FourierCircle[]) => {
+const renderFourierCircles = (time: number, startPoint: Point, fftCircles: SinFnDesc[]) => {
   const [firstCircle, ...restCircles] = fftCircles
   let lastEndpoint = drawFourierCircle(time, startPoint, firstCircle)
 
@@ -79,9 +81,10 @@ const renderFourierCircles = (time: number, startPoint: Point, fftCircles: Fouri
 
 const renderFourier2Circles = (
   time: number,
-  fftCirclesX: FourierCircle[],
-  fftCirclesY: FourierCircle[]
+  fftCirclesX: SinFnDesc[],
+  fftCirclesY: SinFnDesc[]
 ) => {
+  // left circles
   const endPointY = renderFourierCircles(
     time,
     {
@@ -91,17 +94,22 @@ const renderFourier2Circles = (
     fftCirclesY
   )
 
-  const endPointX = renderFourierCircles(
-    time,
-    {
-      x: view.width / 2,
-      y: view.height / 2 - 400,
-    },
-    fftCirclesX
-  )
+  // top circles
+  const endPointX = {
+    x: view.width / 2,
+    y: view.height / 2 - 400,
+  }
+  // renderFourierCircles(
+  //   time,
+  //   {
+  //     x: view.width / 2,
+  //     y: view.height / 2 - 400,
+  //   },
+  //   fftCirclesX
+  // )
 
   const drawPoint = {
-    x: endPointX.x,
+    x: endPointY.x + 500,
     y: endPointY.y,
   }
 
@@ -111,7 +119,7 @@ const renderFourier2Circles = (
   draw.line(endPointX, drawPoint, { color: '#555' })
 
   // keep just 40 end points
-  endPoints = endPoints.reverse().slice(-1200).reverse()
+  endPoints = endPoints.reverse().slice(-500).reverse()
   // + 1 => depends on frameRate
   // endPoints = endPoints.map(i => ({ ...i, x: i.x + 3 }))
 
@@ -131,78 +139,38 @@ const renderFourier2Circles = (
 // square wave
 // amplitude
 
-const squareWaveFns = Array.from({ length: 10 })
-  .map((_, i) => ({
-    radius: 1 / (i * 2 + 1),
-    freq: i * 2 + 1,
-  }))
-  .map(i => ({ ...i, rotationPerSecond: 1 / i.freq }))
+// const squareWaveFns = Array.from({ length: 10 })
+//   .map((_, i) => ({
+//     radius: 1 / (i * 2 + 1),
+//     freq: i * 2 + 1,
+//   }))
+//   .map(({ freq, ...i }) => ({ ...i, frequency: freq }))
 
-const RADIUS_RESIZE = 100
+// const RADIUS_RESIZE = 100
 const examples = {
   a: [
     {
       radius: 10,
-      rotationPerSecond: -1,
-      touchPointAngle: Math.PI / 2,
+      frequency: -1,
+      phase: Math.PI / 2,
     },
     {
       radius: 10,
-      rotationPerSecond: 1,
-      touchPointAngle: Math.PI / 2,
+      frequency: 1,
+      phase: Math.PI / 2,
     },
   ],
-  b: [
-    ...squareWaveFns,
-    // {
-    //   radius: 0.67201625231031,
-    //   rotationPerSecond: 1.024,
-    //   touchPointAngle: 0,
-    // },
-    // {
-    //   radius: 0.6667146789544217,
-    //   rotationPerSecond: 1.1377777777777778,
-    //   touchPointAngle: 0,
-    // },
-    // {
-    //   radius: 0.22667382195124688,
-    //   rotationPerSecond: 0.3303225806451613,
-    //   touchPointAngle: 0,
-    // },
-    // {
-    //   radius: 0.20723312387496987,
-    //   rotationPerSecond: 0.9309090909090909,
-    //   touchPointAngle: 0,
-    // },
-    // {
-    //   radius: 0.19694730833188054,
-    //   rotationPerSecond: 0.3413333333333333,
-    //   touchPointAngle: 0,
-    // },
-    // {
-    //   radius: 0.14814951567985596,
-    //   rotationPerSecond: 0.2048,
-    //   touchPointAngle: 0,
-    // },
-    // {
-    //   radius: 0.14414789446265455,
-    //   rotationPerSecond: 1.28,
-    //   touchPointAngle: 0,
-    // },
-    // {
-    //   radius: 0.11702512194550076,
-    //   rotationPerSecond: 0.2007843137254902,
-    //   touchPointAngle: 0,
-    // },
-  ].map(i => ({
-    ...i,
-    radius: i.radius * RADIUS_RESIZE,
-    rotationPerSecond: -(i.rotationPerSecond * 2),
-    touchPointAngle: 0,
-    // touchPointAngle: -Math.PI / 3,
-    // rotationPerSecond: i.rotationPerSecond / 3,
-  })),
+  b: [] as any,
 }
+// [...squareWaveFns].map(i => ({
+//     ...i,
+//     radius: i.radius * RADIUS_RESIZE,
+//     frequency: -(i.frequency * 2),
+//     phase: 0,
+//     // phase: -Math.PI / 3,
+//     // frequency: i.frequency / 3,
+//   })),
+// }
 
 let runProgram = true
 
@@ -239,6 +207,8 @@ const initRenderUI = () => {
 document.addEventListener('keydown', e => {
   if (e.code === 'Space') {
     runProgram = !runProgram
+    e.preventDefault()
+    e.stopPropagation()
   }
 })
 
@@ -255,28 +225,17 @@ initRenderUI()
 
 // ---------------
 
-export const setupLeftCirclesXD = (data: any[]) => {
-  // console.log(data)
-  examples.b = data.map(i => ({
-    ...i,
-    radius: i.radius,
-    rotationPerSecond: i.rotationPerSecond, //  * 10, // * 20, //  / 8,
-    touchPointAngle: 0,
-  }))
+export const setupLeftCirclesXD = (data: SinFnDesc[]) => {
+  examples.b = data
+  // examples.b = [
+  //   { radius: 100, frequency: 0.25, phase: 0 },
+  //   { radius: 50, frequency: 0.8, phase: 0 },
+  // ]
+  // data
 }
 
-export const setupTopCirclesXD = (data: any[]) => {
-  // console.log(data)
-  examples.a = data.map(i => ({
-    ...i,
-    radius: i.radius,
-    rotationPerSecond: i.rotationPerSecond,
-
-    // touchPointAngle should be computed from the first point of the image
-    touchPointAngle: 0, // -Math.PI / 2,
-  }))
-
-  // renderCycleTick()
+export const setupTopCirclesXD = (data: SinFnDesc[]) => {
+  examples.a = data
 }
 
 export const runCircles = () => {
