@@ -20,8 +20,10 @@ let state = -1
 // defaultCanvas0
 
 window.onmousedown = function (e) {
-  console.log('ahoj', e.which)
+  // console.log('ahoj', e.which)
   // left click
+  // state = FOURIER
+
   if (e.which === 1) {
     state = USER
     drawing = []
@@ -60,8 +62,11 @@ function setup() {
   const height = 3840
   const ratio = 61 / 91
 
-  createCanvas(height * ratio, height)
-  // createCanvas(windowWidth, windowHeight)
+  // createCanvas(height * ratio, height)
+  // createCanvas(height * ratio, height)
+  createCanvas(windowWidth, windowHeight)
+
+  mouseReleased()
   background(0)
   fill(255)
   textAlign(CENTER)
